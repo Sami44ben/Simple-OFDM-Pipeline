@@ -1,3 +1,8 @@
 # Simple-OFDM-Pipeline
 a generaic OFDM basband processing pipline that dose what you expect from a link level OFDM communication system.
 This script is a generic OFDM baseband processing pipeline that does what you expect from a link-level OFDM communication system, it generates random payload bits, applies CRC and LDPC channel coding, maps the coded bits to a modulation scheme, builds an OFDM frame with pilots and a preamble, performs IFFT and cyclic prefix insertion, then transmits the waveform either through Pluto SDR hardware or through an offline simulated channel. On the receiver side, it continuously detects the frame, estimates and corrects carrier frequency offset, performs timing synchronization, removes the cyclic prefix, applies FFT-based OFDM demodulation, estimates and equalizes the channel, demodulates the received symbols, decodes the LDPC code, checks CRC validity, and reports link-quality results such as BER, estimated SNR, CFO, and CRC status.
+To run the script you will need:
+5G Toolbox for nrDLSCHInfo, nrCRCEncode, nrLDPCEncode, nrRateMatchLDPC, nrLDPCDecode, etc.
+Communications Toolbox for qammod, qamdemod.
+Signal Processing Toolbox for functions like xcorr, downsample.
+Communications Toolbox Support Package for ADALM-Pluto Radio Needed only for OTA validation (when offlineMode=false).
