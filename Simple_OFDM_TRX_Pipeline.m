@@ -1,6 +1,6 @@
 clear; clc; close all;
 
-offlineMode=true;
+offlineMode=false;
 
 FFTsize=1024;
 df=30e3;
@@ -49,7 +49,6 @@ sim.delay=20*OSR;
 sim.h=[1;zeros(3*OSR-1,1);0.25*exp(1j*0.8);zeros(5*OSR-1,1);0.08*exp(-1j*0.4)];
 
 % ---------------- TX ----------------
-rng(12345);
 MessageBits=randi([0 1],N_msg,1);
 cbsInfo=nrDLSCHInfo(N_msg,targetRate);
 bgn=cbsInfo.BGN;
@@ -88,13 +87,13 @@ prmbl=prmbl/rms(prmbl);
 prmbl_tx=[prmbl;prmbl];
 CPsize_pre=CPsize;
 
-% FIX 3b: preamble UNIT RMS (drop the *sqrt(2) that made it dominate the payload)
+% Preamble UNIT RMS
 prmbl_block=[prmbl_tx(end-CPsize_pre+1:end);prmbl_tx];
 gaurd=round(0.1*length(timeSignal_t));
 timeSignal1=[zeros(gaurd,1);prmbl_block;timeSignal_t;zeros(gaurd,1)];
-%
 Txsig=repelem(timeSignal1,OSR);
-% FIX 3c: peak-normalize the WHOLE frame once (DAC headroom), preserving preamble:payload ratio
+
+% Peak-normalize the WHOLE frame once (DAC headroom), preserving preamble:payload ratio
 Txsig=Txsig/max(abs(Txsig))*0.8;
 L_hw=N_zc*OSR;
 hw_stp.N = max(hw_stp.N, ceil(3*numel(Txsig)+sim.delay+numel(sim.h)+L_hw));
@@ -128,7 +127,7 @@ while true
     end
     r=r/rms(r);
 
-    % ---- FIX 1: bounded Schmidl-Cox metric + energy gate + CFO at peak ----
+    % Bounded Schmidl-Cox metric + energy gate + CFO at peak ----
     prod_seq=conj(r(1:end-L_hw)).*r(L_hw+1:end);
     P  = filter(ones(L_hw,1),1,prod_seq);
     P  =P(L_hw:end);
@@ -144,7 +143,7 @@ while true
         fprintf('No frame detected in buffer. Listening...\n');
         continue
     end
-    [~,dpk]=max(Mg);                       % peak of gated metric = reliable point
+    [~,dpk]=max(Mg);                      
     cfo_coarse=angle(P(dpk))/(2*pi*L_hw/hw_stp.R);
     smpls_rx=r.*exp(-1j*2*pi*cfo_coarse*(0:numel(r)-1)'/hw_stp.R);
 
@@ -169,7 +168,7 @@ while true
     my_frame=symbs(start_idx+1:start_idx+2*N_zc+numel(timeSignal_t));
     my_preamble=my_frame(1:2*N_zc);
     phaseDiff=my_preamble(N_zc+1:2*N_zc).*conj(my_preamble(1:N_zc));
-    % ---- FIX 2: angle(sum(.)) not mean(angle(.)) ----
+    %  angle(sum(.)) ----
     cfo_fine=angle(sum(phaseDiff))/(2*pi*N_zc/(hw_stp.R/OSR));
     finalCorrectedSignal=my_frame.*exp(-1j*2*pi*cfo_fine*(0:numel(my_frame)-1)'/(hw_stp.R/OSR));
 
